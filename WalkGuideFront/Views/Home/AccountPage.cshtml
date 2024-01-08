@@ -1,0 +1,42 @@
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+@model WalkGuideFront.Models.AccountModel
+
+@{
+    ViewData["Title"] = "AccountPage";
+}
+
+<h1>Account Page</h1>
+<hr />
+<h3>Here you can change your password</h3>
+
+<br />
+
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="AccountPage">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            @{
+                var userEmail = HttpContextAccessor.HttpContext.Session.GetString("_UserEmail");
+            }
+            <h5>Email - @userEmail</h5>
+
+            <h5>Send an email to change the password</h5>
+
+            <div class="form-group">
+                <input type="submit" value="Send" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to Main Page</a>
+</div>
+
+<h5 style="color:green">@ViewBag.EmailSent</h5>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
