@@ -1,3 +1,6 @@
+using WalkGuideFront.Models.Authentication;
+using WalkGuideFront.Models.Authentication.Interfaces;
+
 namespace WalkGuideFront
 {
     public class Program
@@ -8,6 +11,7 @@ namespace WalkGuideFront
 
             builder.Services.AddControllersWithViews();
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            builder.Services.AddSingleton<IAuthenticationManager, AuthenticationManager>();
 
             builder.Services.AddDistributedMemoryCache();
             builder.Services.AddSession(options =>

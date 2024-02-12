@@ -5,14 +5,17 @@ using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 using WalkGuideFront.Models;
 using WalkGuideFront.Models.Attributes;
+using WalkGuideFront.Models.Authentication.Interfaces;
+using WalkGuideFront.Models.RegexPatterns;
 
 namespace WalkGuideFront.Controllers
 {
     public class HomeController : Controller
     {
-        private const string ApiKey = "";
-        public HomeController()
+        private readonly IAuthenticationManager _authenticationManager;
+        public HomeController(IAuthenticationManager authenticationManager)
         {
+            _authenticationManager = authenticationManager;
         }
 
         public IActionResult Index()
@@ -30,11 +33,9 @@ namespace WalkGuideFront.Controllers
         {
             try
             {
-                FirebaseAuthProvider firebaseAuthProvider = new(new FirebaseConfig(ApiKey));
+                var authLink = await _authenticationManager.SignInWithEmailAndPasswordAsync(userData.Email, userData.Password);
 
-                var authLink = await firebaseAuthProvider.SignInWithEmailAndPasswordAsync(userData.Email, userData.Password);
-
-                if (authLink.FirebaseToken != null)
+                if (authLink is not null)
                 {
                     HttpContext.Session.SetString("_UserToken", authLink.FirebaseToken);
                     HttpContext.Session.SetString("_UserEmail", authLink.User.Email); // Saving an Email to use it in View
@@ -45,19 +46,21 @@ namespace WalkGuideFront.Controllers
             catch (FirebaseAuthException ex)
             {
                 ViewBag.ErrorMessage = "Cannot sign in into account, check email and password";
-                Console.WriteLine($"{ex.Message}");
-                Console.WriteLine(ex);
+                //Console.WriteLine($"{ex.Message}");
+                //Console.WriteLine(ex);
             }
             catch(Exception ex)
             {
-                Console.WriteLine($"{ex.Message}");
-                Console.WriteLine(ex);
+                ViewBag.ErrorMessage = "Unknown error";
+                //Console.WriteLine($"{ex.Message}");
+                //Console.WriteLine(ex);
             }
 
             return View(userData);
         }
 
-        public async Task<IActionResult> LogOut()
+        [CustomAuthorization]
+        public IActionResult LogOut()
         {
             HttpContext.Session.Remove("_UserToken");
             HttpContext.Session.Remove("_UserEmail");
@@ -94,7 +97,7 @@ namespace WalkGuideFront.Controllers
                         }
                         else
                         {
-                            Console.WriteLine("Ошибка: " + response.StatusCode);
+                            Console.WriteLine("Error: " + response.StatusCode);
                         }
                     }   
 
@@ -123,8 +126,8 @@ namespace WalkGuideFront.Controllers
         {
             try
             {
-                FirebaseAuthProvider firebaseAuthProvider = new(new FirebaseConfig(ApiKey));
-                await firebaseAuthProvider.SendPasswordResetEmailAsync(HttpContext.Session.GetString("_UserEmail"));
+                await _authenticationManager.SendPasswordResetEmailAsync(HttpContext.Session.GetString("_UserEmail"));
+                
                 ViewBag.EmailSent = "An email with instructions to change your password has been sent to your email address";
             }
             catch(Exception ex)
@@ -145,33 +148,32 @@ namespace WalkGuideFront.Controllers
         {
             try
             {
-                FirebaseAuthProvider firebaseAuthProvider = new(new FirebaseConfig(ApiKey));
+                var authLink = await _authenticationManager
+                    .CreateUserWithEmailAndPasswordAsync(userData.Email, userData.Password);
 
-                var authLink = await firebaseAuthProvider.
-                    CreateUserWithEmailAndPasswordAsync(userData.Email, userData.Password);
-
-                if (authLink.FirebaseToken != null)
+                if (authLink.FirebaseToken is not null)
                     return RedirectToAction("SignIn");
             }
             catch (Exception ex)
             {
-                string pattern = @"""message""\s*:\s*""(.*?)""";
-                Match match = Regex.Match(ex.Message, pattern);
+                
+                var match = Regex.Match(ex.Message, RegexPatterns.CreatingUserError);
 
                 if (match.Success)
                 {
                     if (match.Groups[1].Value == "EMAIL_EXISTS")
                         ViewBag.ErrorMessage = "This email is occupied";
-                    else if(match.Groups[1].Value == "INVALID_EMAIL")
+                    else if (match.Groups[1].Value == "INVALID_EMAIL")
                         ViewBag.ErrorMessage = "This email is invalid";
                 }
+                else
+                    ViewBag.ErrorMessage = "Uknown error";
 
                 Console.WriteLine($"{ex.Message}");
                 Console.WriteLine(ex);
             }
 
             return View(userData);
-            
         }
 
         //default error page
