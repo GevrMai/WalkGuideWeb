@@ -5,7 +5,7 @@ namespace WalkGuideFront.Models.Authentication
 {
     public class AuthenticationManager : IAuthenticationManager
     {
-        private const string ApiKey = "AIzaSyAV-MZlc1f9wDyb3v2Gy_L4HzZrRrmtvyY";
+        private const string ApiKey = "";
 
         public async Task<FirebaseAuthLink> SignInWithEmailAndPasswordAsync(string email, string password)
         {

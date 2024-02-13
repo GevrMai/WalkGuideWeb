@@ -46,14 +46,12 @@ namespace WalkGuideFront.Controllers
             catch (FirebaseAuthException ex)
             {
                 ViewBag.ErrorMessage = "Cannot sign in into account, check email and password";
-                //Console.WriteLine($"{ex.Message}");
-                //Console.WriteLine(ex);
+                Console.WriteLine($"{ex.Message}");
             }
             catch(Exception ex)
             {
                 ViewBag.ErrorMessage = "Unknown error";
-                //Console.WriteLine($"{ex.Message}");
-                //Console.WriteLine(ex);
+                Console.WriteLine($"{ex.Message}");
             }
 
             return View(userData);
@@ -127,11 +125,17 @@ namespace WalkGuideFront.Controllers
             try
             {
                 await _authenticationManager.SendPasswordResetEmailAsync(HttpContext.Session.GetString("_UserEmail"));
-                
+
                 ViewBag.EmailSent = "An email with instructions to change your password has been sent to your email address";
             }
-            catch(Exception ex)
+            catch (KeyNotFoundException ex)
             {
+                ViewBag.EmailSent = "Problem with your user session";
+                Console.WriteLine(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.EmailSent = "Uknown error";
                 Console.WriteLine(ex.Message);
             }
 
